@@ -1,9 +1,21 @@
+require('dotenv').config();
+
 const app = require("./app");
+const connectDB = require("./db");
+// const { seed } = require("./models/productModel");
+
 const PORT = process.env.PORT || 3002;
-const server = app.listen(PORT, () => {
-  console.log(`Product Service running on port ${PORT}`);
-  console.log(`API Docs: http://localhost:${PORT}/api-docs`);
-});
-process.on("SIGTERM", () => server.close(() => process.exit(0)));
-process.on("SIGINT", () => server.close(() => process.exit(0)));
-module.exports = server;
+
+const start = async () => {
+  await connectDB();
+  // await seed();
+  const server = app.listen(PORT, () => {
+    console.log(`Product Service running on port ${PORT}`);
+    console.log(`API Docs: http://localhost:${PORT}/api-docs`);
+  });
+  const shutdown = () => server.close(() => { console.log("Product Service stopped"); process.exit(0); });
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT",  shutdown);
+};
+
+start().catch(err => { console.error("Failed to start:", err); process.exit(1); });
