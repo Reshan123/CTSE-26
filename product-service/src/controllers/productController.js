@@ -67,40 +67,40 @@ const productController = {
   },
 
   // Called by Order Service — atomically check AND decrement stock
-  // checkAndReserveStock: async (req, res, next) => {
-  //   try {
-  //     const { productId, quantity } = req.body;
-  //     if (!productId || !quantity)
-  //       return res.status(400).json({ error: "productId and quantity required" });
+  checkAndReserveStock: async (req, res, next) => {
+    try {
+      const { productId, quantity } = req.body;
+      if (!productId || !quantity)
+        return res.status(400).json({ error: "productId and quantity required" });
 
-  //     // findOneAndUpdate with $inc is atomic in MongoDB
-  //     const product = await Product.findOneAndUpdate(
-  //       { _id: productId, stock: { $gte: quantity } },   // only match if stock is sufficient
-  //       { $inc: { stock: -quantity } },
-  //       { new: true }
-  //     );
+      // findOneAndUpdate with $inc is atomic in MongoDB
+      const product = await Product.findOneAndUpdate(
+        { _id: productId, stock: { $gte: quantity } },   // only match if stock is sufficient
+        { $inc: { stock: -quantity } },
+        { new: true }
+      );
 
-  //     if (!product) {
-  //       const exists = await Product.findById(productId);
-  //       if (!exists) return res.status(404).json({ error: "Product not found" });
-  //       return res.status(409).json({ error: "Insufficient stock", available: exists.stock });
-  //     }
-  //     res.json({ success: true, product, reserved: quantity });
-  //   } catch (err) { next(err); }
-  // },
+      if (!product) {
+        const exists = await Product.findById(productId);
+        if (!exists) return res.status(404).json({ error: "Product not found" });
+        return res.status(409).json({ error: "Insufficient stock", available: exists.stock });
+      }
+      res.json({ success: true, product, reserved: quantity });
+    } catch (err) { next(err); }
+  },
 
-  // restoreStock: async (req, res, next) => {
-  //   try {
-  //     const { productId, quantity } = req.body;
-  //     const product = await Product.findByIdAndUpdate(
-  //       productId,
-  //       { $inc: { stock: quantity } },
-  //       { new: true }
-  //     );
-  //     if (!product) return res.status(404).json({ error: "Product not found" });
-  //     res.json({ success: true, product });
-  //   } catch (err) { next(err); }
-  // }
+  restoreStock: async (req, res, next) => {
+    try {
+      const { productId, quantity } = req.body;
+      const product = await Product.findByIdAndUpdate(
+        productId,
+        { $inc: { stock: quantity } },
+        { new: true }
+      );
+      if (!product) return res.status(404).json({ error: "Product not found" });
+      res.json({ success: true, product });
+    } catch (err) { next(err); }
+  }
 };
 
 module.exports = productController;

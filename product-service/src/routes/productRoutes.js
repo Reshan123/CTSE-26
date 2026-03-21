@@ -119,48 +119,48 @@ router.put("/:id", productController.update);
  */
 router.delete("/:id", productController.delete);
 
-// // Internal service-to-service endpoints (secured by service key in production)
-// /**
-//  * @swagger
-//  * /api/products/internal/check-stock:
-//  *   post:
-//  *     summary: Check and reserve stock (internal)
-//  *     tags: [Internal]
-//  *     requestBody:
-//  *       required: true
-//  *       content:
-//  *         application/json:
-//  *           schema:
-//  *             type: object
-//  *             required: [productId, quantity]
-//  *             properties:
-//  *               productId: { type: string }
-//  *               quantity: { type: integer }
-//  *     responses:
-//  *       200: { description: Stock reserved }
-//  *       400: { description: Insufficient stock }
-//  */
-// router.post("/internal/check-stock", productController.checkAndReserveStock);
+// Internal service-to-service endpoints (secured by service key in production)
+/**
+ * @swagger
+ * /api/products/internal/check-stock:
+ *   post:
+ *     summary: Check and reserve stock (internal)
+ *     tags: [Internal]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [productId, quantity]
+ *             properties:
+ *               productId: { type: string }
+ *               quantity: { type: integer }
+ *     responses:
+ *       200: { description: Stock reserved }
+ *       400: { description: Insufficient stock }
+ */
+router.post("/internal/check-stock", productController.checkAndReserveStock);
 
-// /**
-//  * @swagger
-//  * /api/products/internal/restore-stock:
-//  *   post:
-//  *     summary: Restore stock (internal)
-//  *     tags: [Internal]
-//  *     requestBody:
-//  *       required: true
-//  *       content:
-//  *         application/json:
-//  *           schema:
-//  *             type: object
-//  *             required: [productId, quantity]
-//  *             properties:
-//  *               productId: { type: string }
-//  *               quantity: { type: integer }
-//  *     responses:
-//  *       200: { description: Stock restored }
-//  */
-// router.post("/internal/restore-stock", productController.restoreStock);
+/**
+ * @swagger
+ * /api/products/internal/restore-stock:
+ *   post:
+ *     summary: Restore stock (internal)
+ *     tags: [Internal]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [productId, quantity]
+ *             properties:
+ *               productId: { type: string }
+ *               quantity: { type: integer }
+ *     responses:
+ *       200: { description: Stock restored }
+ */
+router.post("/internal/restore-stock", productController.restoreStock);
 
 module.exports = router;
