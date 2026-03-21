@@ -34,7 +34,7 @@ const { authenticate, authorize } = require("../middleware/auth");
 
 /**
  * @swagger
- * /users/me:
+ * /api/users/me:
  *   get:
  *     summary: Get current user's profile
  *     tags: [Users]
@@ -57,7 +57,7 @@ router.get("/me", authenticate, userController.getProfile);
 
 /**
  * @swagger
- * /users/me:
+ * /api/users/me:
  *   put:
  *     summary: Update current user's profile
  *     tags: [Users]
@@ -91,7 +91,7 @@ router.put("/me", authenticate, userController.updateProfile);
 
 /**
  * @swagger
- * /users/{id}:
+ * /api/users/{id}:
  *   get:
  *     summary: Get user by ID
  *     tags: [Users]
@@ -123,7 +123,7 @@ router.get("/:id", authenticate, userController.getUserById);
 
 /**
  * @swagger
- * /users:
+ * /api/users:
  *   get:
  *     summary: Get all users (admin only)
  *     tags: [Users]
@@ -152,7 +152,7 @@ router.get("/", authenticate, authorize("admin"), userController.getAllUsers);
 
 /**
  * @swagger
- * /users/{id}:
+ * /api/users/{id}:
  *   delete:
  *     summary: Delete user by ID (admin only)
  *     tags: [Users]
