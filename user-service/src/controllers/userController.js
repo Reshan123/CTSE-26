@@ -1,5 +1,5 @@
 
-const UserModel = require("../models/userModel");
+const UserModel = require("../models/user");
 
 const userController = {
   getProfile: (req, res) => {

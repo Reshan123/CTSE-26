@@ -1,4 +1,5 @@
 const express = require('express');
+const { connectDb } = require('./db');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -11,6 +12,7 @@ const { requestLogger } = require('./middleware/logger');
 
 const app = express();
 
+app.use(express.json());
 app.use(helmet());
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
@@ -24,7 +26,6 @@ const limiter = rateLimit({
   message: { error: 'Too many requests, please try again later.' }
 });
 app.use('/api/', limiter);
-app.use(express.json({ limit: '10kb' }));
 app.use(requestLogger);
 
 app.get('/health', (req, res) => {
@@ -36,4 +37,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use(errorHandler);
 
-module.exports = app;
+async function start() {
+  const uri = process.env.MONGO_URI || "mongodb://localhost:27017/user-service";
+  await connectDb(uri);
+  console.log('Connected to MongoDB');
+}
+
+module.exports = { app, start };
