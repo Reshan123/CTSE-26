@@ -1,51 +1,60 @@
-const orders = new Map();
-let idCounter = 1;
+const mongoose = require("mongoose");
 
 const OrderStatus = {
-  PENDING: "pending",
-  CONFIRMED: "confirmed",
+  PENDING:    "pending",
+  CONFIRMED:  "confirmed",
   PROCESSING: "processing",
-  SHIPPED: "shipped",
-  DELIVERED: "delivered",
-  CANCELLED: "cancelled"
+  SHIPPED:    "shipped",
+  DELIVERED:  "delivered",
+  CANCELLED:  "cancelled",
 };
 
-const OrderModel = {
-  create: (data) => {
-    const id = `ORD-${String(idCounter++).padStart(5, "0")}`;
-    const order = {
-      id,
-      userId: data.userId,
-      items: data.items,
-      subtotal: data.subtotal,
-      total: data.total,
-      status: OrderStatus.PENDING,
-      shippingAddress: data.shippingAddress,
-      paymentId: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    orders.set(id, order);
-    return order;
+const orderItemSchema = new mongoose.Schema({
+  productId: { type: String, required: true },
+  name:      { type: String, required: true },
+  price:     { type: Number, required: true },
+  quantity:  { type: Number, required: true, min: 1 },
+  lineTotal: { type: Number, required: true },
+}, { _id: false });
+
+const shippingAddressSchema = new mongoose.Schema({
+  street:  { type: String, required: true },
+  city:    { type: String, required: true },
+  country: { type: String, required: true },
+}, { _id: false });
+
+const orderSchema = new mongoose.Schema(
+  {
+    // Human-readable order number e.g. ORD-00001
+    orderNumber: { type: String, unique: true },
+    userId:          { type: String, required: true, index: true },
+    items:           [orderItemSchema],
+    subtotal:        { type: Number, required: true },
+    total:           { type: Number, required: true },
+    status:          { type: String, enum: Object.values(OrderStatus), default: OrderStatus.PENDING },
+    shippingAddress: shippingAddressSchema,
+    paymentId:       { type: String, default: null },
   },
-  findById: (id) => orders.get(id) || null,
-  findByUser: (userId) => Array.from(orders.values()).filter(o => o.userId === userId),
-  findAll: () => Array.from(orders.values()),
-  update: (id, updates) => {
-    const order = orders.get(id);
-    if (!order) return null;
-    const updated = { ...order, ...updates, updatedAt: new Date().toISOString() };
-    orders.set(id, updated);
-    return updated;
-  },
-  updateStatus: (id, status) => {
-    const order = orders.get(id);
-    if (!order) return null;
-    order.status = status;
-    order.updatedAt = new Date().toISOString();
-    orders.set(id, order);
-    return order;
+  { timestamps: true }
+);
+
+// Auto-generate orderNumber before save
+orderSchema.pre("save", async function (next) {
+  if (this.isNew && !this.orderNumber) {
+    const count = await mongoose.model("Order").countDocuments();
+    this.orderNumber = `ORD-${String(count + 1).padStart(5, "0")}`;
   }
-};
+  next();
+});
 
-module.exports = { OrderModel, OrderStatus };
+orderSchema.set("toJSON", {
+  transform: (doc, ret) => {
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+    return ret;
+  },
+});
+
+const Order = mongoose.model("Order", orderSchema);
+module.exports = { Order, OrderStatus };

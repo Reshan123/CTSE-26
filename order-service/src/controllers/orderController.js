@@ -1,17 +1,16 @@
-const { OrderModel, OrderStatus } = require("../models/orderModel");
+const mongoose = require("mongoose");
+const { Order, OrderStatus } = require("../models/orderModel");
 const serviceClients = require("../utils/serviceClients");
 
 const orderController = {
   createOrder: async (req, res, next) => {
     try {
       const { items, shippingAddress } = req.body;
-
       if (!items || !Array.isArray(items) || items.length === 0)
         return res.status(400).json({ error: "Order must contain at least one item" });
       if (!shippingAddress)
         return res.status(400).json({ error: "Shipping address is required" });
 
-      // Validate and fetch products + reserve stock
       let subtotal = 0;
       const enrichedItems = [];
 
@@ -20,15 +19,11 @@ const orderController = {
           return res.status(400).json({ error: "Each item needs productId and quantity >= 1" });
 
         let product;
-        try {
-          product = await serviceClients.getProduct(item.productId);
-        } catch (err) {
-          return res.status(404).json({ error: `Product ${item.productId} not found` });
-        }
+        try { product = await serviceClients.getProduct(item.productId); }
+        catch { return res.status(404).json({ error: `Product ${item.productId} not found` }); }
 
-        try {
-          await serviceClients.checkAndReserveStock(item.productId, item.quantity);
-        } catch (err) {
+        try { await serviceClients.checkAndReserveStock(item.productId, item.quantity); }
+        catch (err) {
           const msg = err.response?.data?.error || "Stock check failed";
           return res.status(409).json({ error: msg, productId: item.productId });
         }
@@ -38,93 +33,120 @@ const orderController = {
           name: product.name,
           price: product.price,
           quantity: item.quantity,
-          lineTotal: product.price * item.quantity
+          lineTotal: product.price * item.quantity,
         });
         subtotal += product.price * item.quantity;
       }
 
-      const total = parseFloat((subtotal * 1.1).toFixed(2)); // +10% tax
-
-      const order = OrderModel.create({
+      const total = parseFloat((subtotal * 1.1).toFixed(2));
+      const order = await Order.create({
         userId: req.user.userId,
         items: enrichedItems,
         subtotal: parseFloat(subtotal.toFixed(2)),
         total,
-        shippingAddress
+        shippingAddress,
       });
 
-      // Initiate payment
       try {
-        const paymentResp = await serviceClients.initiatePayment(order.id, total, req.user.userId, req.token);
-        OrderModel.update(order.id, { paymentId: paymentResp.paymentId, status: OrderStatus.CONFIRMED });
+        const paymentResp = await serviceClients.initiatePayment(
+          order._id.toString(), total, req.user.userId, req.token
+        );
+        await Order.findByIdAndUpdate(order._id, {
+          $set: { paymentId: paymentResp.paymentId, status: OrderStatus.CONFIRMED }
+        });
       } catch (err) {
         console.error("Payment initiation failed:", err.message);
-        // Restore stock on payment failure
-        for (const item of enrichedItems) {
+        for (const item of enrichedItems)
           await serviceClients.restoreStock(item.productId, item.quantity).catch(() => {});
-        }
-        return res.status(502).json({ error: "Payment initiation failed", orderId: order.id });
+        await Order.findByIdAndDelete(order._id);
+        return res.status(502).json({ error: "Payment initiation failed" });
       }
 
-      const finalOrder = OrderModel.findById(order.id);
+      const finalOrder = await Order.findById(order._id);
       res.status(201).json({ message: "Order created successfully", order: finalOrder });
     } catch (err) { next(err); }
   },
 
-  getMyOrders: (req, res) => {
-    const orders = OrderModel.findByUser(req.user.userId);
-    res.json({ orders, count: orders.length });
+  getMyOrders: async (req, res, next) => {
+    try {
+      const orders = await Order.find({ userId: req.user.userId }).sort({ createdAt: -1 });
+      res.json({ orders, count: orders.length });
+    } catch (err) { next(err); }
   },
 
-  getOrderById: (req, res) => {
-    const order = OrderModel.findById(req.params.id);
-    if (!order) return res.status(404).json({ error: "Order not found" });
-    if (order.userId !== req.user.userId && req.user.role !== "admin")
-      return res.status(403).json({ error: "Access denied" });
-    res.json({ order });
+  getOrderById: async (req, res, next) => {
+    try {
+      if (!mongoose.isValidObjectId(req.params.id))
+        return res.status(404).json({ error: "Order not found" });
+      const order = await Order.findById(req.params.id);
+      if (!order) return res.status(404).json({ error: "Order not found" });
+      if (order.userId !== req.user.userId && req.user.role !== "admin")
+        return res.status(403).json({ error: "Access denied" });
+      res.json({ order });
+    } catch (err) { next(err); }
   },
 
   cancelOrder: async (req, res, next) => {
     try {
-      const order = OrderModel.findById(req.params.id);
+      if (!mongoose.isValidObjectId(req.params.id))
+        return res.status(404).json({ error: "Order not found" });
+      const order = await Order.findById(req.params.id);
       if (!order) return res.status(404).json({ error: "Order not found" });
       if (order.userId !== req.user.userId && req.user.role !== "admin")
         return res.status(403).json({ error: "Access denied" });
-      if (["shipped","delivered"].includes(order.status))
+      if (["shipped", "delivered"].includes(order.status))
         return res.status(400).json({ error: `Cannot cancel order with status: ${order.status}` });
 
-      // Restore stock
-      for (const item of order.items) {
+      for (const item of order.items)
         await serviceClients.restoreStock(item.productId, item.quantity).catch(err =>
           console.error("Stock restore failed:", err.message));
-      }
 
-      const updated = OrderModel.updateStatus(order.id, OrderStatus.CANCELLED);
+      const updated = await Order.findByIdAndUpdate(
+        order._id,
+        { $set: { status: OrderStatus.CANCELLED } },
+        { new: true }
+      );
       res.json({ message: "Order cancelled", order: updated });
     } catch (err) { next(err); }
   },
 
-  getAllOrders: (req, res) => {
-    const orders = OrderModel.findAll();
-    res.json({ orders, count: orders.length });
+  getAllOrders: async (req, res, next) => {
+    try {
+      const orders = await Order.find().sort({ createdAt: -1 });
+      res.json({ orders, count: orders.length });
+    } catch (err) { next(err); }
   },
 
-  updateOrderStatus: (req, res) => {
-    const { status } = req.body;
-    const validStatuses = Object.values({ PENDING:"pending",CONFIRMED:"confirmed",PROCESSING:"processing",SHIPPED:"shipped",DELIVERED:"delivered",CANCELLED:"cancelled" });
-    if (!validStatuses.includes(status))
-      return res.status(400).json({ error: "Invalid status", valid: validStatuses });
-    const order = OrderModel.updateStatus(req.params.id, status);
-    if (!order) return res.status(404).json({ error: "Order not found" });
-    res.json({ message: "Order status updated", order });
+  updateOrderStatus: async (req, res, next) => {
+    try {
+      const { status } = req.body;
+      if (!Object.values(OrderStatus).includes(status))
+        return res.status(400).json({ error: "Invalid status", valid: Object.values(OrderStatus) });
+      if (!mongoose.isValidObjectId(req.params.id))
+        return res.status(404).json({ error: "Order not found" });
+      const order = await Order.findByIdAndUpdate(
+        req.params.id,
+        { $set: { status } },
+        { new: true }
+      );
+      if (!order) return res.status(404).json({ error: "Order not found" });
+      res.json({ message: "Order status updated", order });
+    } catch (err) { next(err); }
   },
 
-  // Internal: called by payment service to confirm payment
-  confirmPayment: (req, res) => {
-    const { orderId, paymentId } = req.body;
-    const order = OrderModel.update(orderId, { paymentId, status: "processing" });
-    if (!order) return res.status(404).json({ error: "Order not found" });
-    res.json({ success: true, order });
+  confirmPayment: async (req, res, next) => {
+    try {
+      const { orderId, paymentId } = req.body;
+      if (!mongoose.isValidObjectId(orderId))
+        return res.status(404).json({ error: "Order not found" });
+      const order = await Order.findByIdAndUpdate(
+        orderId,
+        { $set: { paymentId, status: OrderStatus.PROCESSING } },
+        { new: true }
+      );
+      if (!order) return res.status(404).json({ error: "Order not found" });
+      res.json({ success: true, order });
+    } catch (err) { next(err); }
   }
 };
 
