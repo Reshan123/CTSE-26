@@ -9,7 +9,7 @@ on:
     branches: [main]
     paths:
       - "product-service/**"
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual triggering from the Actions tab
 
 env:
   IMAGE_NAME: product-service
@@ -75,8 +75,6 @@ jobs:
     permissions:
       id-token: write # Required for OIDC
       contents: read
-    outputs:
-      image: ${{ steps.build-image.outputs.image }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -88,19 +86,18 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Log in to ACR
+      - name: Log in to Azure Container Registry
         run: az acr login --name ${{ secrets.ACR_NAME }}
 
       - name: Build and push Docker image
-        id: build-image
         run: |
-          IMAGE_TAG=${{ github.sha }}
-          FULL_IMAGE_NAME=${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG
+          # RECONSTRUCTION FIX: Direct use of vars.ACR_URL to avoid masking
+          FULL_IMAGE_NAME=${{ vars.ACR_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
           docker build -t $FULL_IMAGE_NAME ./product-service
-          docker tag $FULL_IMAGE_NAME ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+          docker tag $FULL_IMAGE_NAME ${{ vars.ACR_URL }}/${{ env.IMAGE_NAME }}:latest
           docker push $FULL_IMAGE_NAME
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
-          echo "image=$FULL_IMAGE_NAME" >> $GITHUB_OUTPUT
+          docker push ${{ vars.ACR_URL }}/${{ env.IMAGE_NAME }}:latest
 
   deploy:
     name: Deploy to Azure Container Apps
@@ -124,5 +121,11 @@ jobs:
           acrName: ${{ secrets.ACR_NAME }}
           containerAppName: ${{ env.IMAGE_NAME }}
           resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          imageToDeploy: ${{ needs.build-and-push.outputs.image }}
+          # FIX: Matching the manually built path
+          imageToDeploy: ${{ vars.ACR_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           targetPort: ${{ env.PORT }}
+          # STARTUP FIX: Passing DB connection and Port
+          environmentVariables: >
+            PORT=${{ env.PORT }}
+            MONGODB_URI=${{ secrets.MONGODB_URI }}
+            USER_SERVICE_URL=${{ secrets.USER_SERVICE_URL }}
