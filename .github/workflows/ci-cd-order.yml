@@ -124,3 +124,8 @@ jobs:
           # FIX: Reconstruct the image path here instead of using job outputs
           imageToDeploy: ${{ vars.ACR_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           targetPort: ${{ env.PORT }}
+          environmentVariables: >
+            PORT=${{ env.PORT }}
+            MONGODB_URI=${{ secrets.MONGODB_URI }}
+            USER_SERVICE_URL=${{ secrets.USER_SERVICE_URL }}
+            PRODUCT_SERVICE_URL=${{ secrets.PRODUCT_SERVICE_URL }}
