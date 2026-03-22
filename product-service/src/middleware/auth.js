@@ -37,7 +37,10 @@ const authenticate = async (req, res, next) => {
       const response = await axios.get(
         `${process.env.USER_SERVICE_URL}/api/auth/validate`,
         {
-          headers: { Authorization: authHeader },
+          headers: {
+            Authorization: authHeader,
+            "x-service-key": process.env.INTERNAL_SERVICE_KEY,
+          },
         }
       );
 
