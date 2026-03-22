@@ -19,10 +19,15 @@ const { authenticate, authorize } = require("../middleware/auth");
  * type: object
  * required: [orderId, amount, userId]
  * properties:
- * orderId: { type: string }
- * amount: { type: number }
- * userId: { type: string }
- * method: { type: string, enum: [card, paypal, bank_transfer] }
+ * orderId:
+ * type: string
+ * amount:
+ * type: number
+ * userId:
+ * type: string
+ * method:
+ * type: string
+ * enum: [card, paypal, bank_transfer]
  * responses:
  * 202:
  * description: Payment initiated
