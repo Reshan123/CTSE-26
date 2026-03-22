@@ -125,9 +125,5 @@ jobs:
           imageToDeploy: ${{ vars.ACR_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           targetPort: ${{ env.PORT }}
           # ENV VAR FIX: Injects database and port info
-          environmentVariables: >-
-            PORT=${{ env.PORT }}
-            MONGODB_URI=${{ secrets.MONGODB_URI }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            JWT_EXPIRES_IN=24h
+          environmentVariables: PORT=${{ env.PORT }} MONGODB_URI=${{ secrets.MONGODB_URI }} JWT_SECRET=${{ secrets.JWT_SECRET }} JWT_EXPIRES_IN=24h
 
