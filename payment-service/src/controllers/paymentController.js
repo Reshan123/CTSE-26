@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const axios = require("axios");
-const crypto = require("crypto");
+const crypto = require("node:crypto");
 const { Payment, PaymentStatus } = require("../models/paymentModel");
 
 const ORDER_SERVICE = process.env.ORDER_SERVICE_URL || "http://order-service:3003";
@@ -17,7 +17,16 @@ const paymentController = {
         return res.status(400).json({ error: "orderId, amount, and userId are required" });
       if (amount <= 0)
         return res.status(400).json({ error: "Amount must be positive" });
+      if (!mongoose.Types.ObjectId.isValid(orderId)) {
+        return res.status(400).json({ error: "Invalid orderId" });
+      }
+      
+      const safeOrderId = new mongoose.Types.ObjectId(orderId);
 
+      const existingSuccess = await Payment.findOne({
+        orderId: safeOrderId,
+        status: PaymentStatus.COMPLETED
+      });
       const existingSuccess = await Payment.findOne({ orderId, status: PaymentStatus.COMPLETED });
       if (existingSuccess)
         return res.status(409).json({ error: "Order already paid", payment: existingSuccess });
@@ -72,7 +81,15 @@ const paymentController = {
 
   getMyPayments: async (req, res, next) => {
     try {
-      const payments = await Payment.find({ userId: req.user.userId }).sort({ createdAt: -1 });
+      const userId = req.user.userId;
+
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ error: "Invalid user id" });
+      }
+
+      const payments = await Payment.find({
+        userId: new mongoose.Types.ObjectId(userId)
+      }).sort({ createdAt: -1 });
       res.json({ payments, count: payments.length });
     } catch (err) { next(err); }
   },
