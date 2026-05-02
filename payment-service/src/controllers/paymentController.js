@@ -1,10 +1,13 @@
 const mongoose = require("mongoose");
 const axios = require("axios");
+const crypto = require("crypto");
 const { Payment, PaymentStatus } = require("../models/paymentModel");
 
 const ORDER_SERVICE = process.env.ORDER_SERVICE_URL || "http://order-service:3003";
 
-const simulateGateway = () => Math.random() > 0.05; // 95% success
+const simulateGateway = () => {
+  return crypto.randomInt(100) >= 5; // 95% success
+};
 
 const paymentController = {
   initiatePayment: async (req, res, next) => {
