@@ -1,3 +1,4 @@
+const crypto = require("node:crypto");
 const mongoose = require("mongoose");
 
 const PaymentStatus = {
@@ -30,7 +31,8 @@ paymentSchema.pre("save", async function (next) {
       this.paymentNumber = `PAY-${String(count + 1).padStart(5, "0")}`;
     }
     if (!this.transactionRef) {
-      this.transactionRef = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+      const randomPart = crypto.randomBytes(4).toString("hex").toUpperCase();
+      this.transactionRef = `TXN-${Date.now()}-${randomPart}`;
     }
   }
   next();
