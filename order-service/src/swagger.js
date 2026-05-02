@@ -7,7 +7,7 @@ module.exports = swaggerJsdoc({
       version: "1.0.0",
       description: "Order management with product stock integration",
     },
-    servers: [{ url: process.env.BASE_URL || "http://localhost:3003" }],
+    servers: [{ url: process.env.BASE_URL }],
     components: {
       securitySchemes: {
         bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
