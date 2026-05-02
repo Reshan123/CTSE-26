@@ -3,7 +3,7 @@ const axios = require("axios");
 const crypto = require("node:crypto");
 const { Payment, PaymentStatus } = require("../models/paymentModel");
 
-const ORDER_SERVICE = process.env.ORDER_SERVICE_URL || "http://order-service:3003";
+const ORDER_SERVICE = process.env.ORDER_SERVICE_URL;
 
 const simulateGateway = () => {
   return crypto.randomInt(100) >= 5; // 95% success
