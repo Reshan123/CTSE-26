@@ -27,7 +27,6 @@ const paymentController = {
         orderId: safeOrderId,
         status: PaymentStatus.COMPLETED
       });
-      const existingSuccess = await Payment.findOne({ orderId, status: PaymentStatus.COMPLETED });
       if (existingSuccess)
         return res.status(409).json({ error: "Order already paid", payment: existingSuccess });
 
