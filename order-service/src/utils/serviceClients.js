@@ -1,8 +1,8 @@
 const axios = require("axios");
 
-const USER_SERVICE = process.env.USER_SERVICE_URL || "http://user-service:3001";
-const PRODUCT_SERVICE = process.env.PRODUCT_SERVICE_URL || "http://product-service:3002";
-const PAYMENT_SERVICE = process.env.PAYMENT_SERVICE_URL || "http://payment-service:3004";
+const USER_SERVICE = process.env.USER_SERVICE_URL ;
+const PRODUCT_SERVICE = process.env.PRODUCT_SERVICE_URL;
+const PAYMENT_SERVICE = process.env.PAYMENT_SERVICE_URL;
 
 const SERVICE_HEADERS = () => ({ "x-service-key": process.env.INTERNAL_SERVICE_KEY });
 

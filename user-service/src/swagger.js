@@ -9,7 +9,7 @@ const options = {
       version: "1.0.0",
       description: "Handles user registration, authentication, and profile management"
     },
-    servers: [{ url: process.env.BASE_URL || "http://localhost:3001" }],
+    servers: [{ url: process.env.BASE_URL }],
     components: {
       securitySchemes: {
         bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" }

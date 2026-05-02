@@ -11,6 +11,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  // Wait for any pending async operations (e.g., setTimeout callbacks) to complete
+  await new Promise(resolve => setTimeout(resolve, 3000));
   await mongoose.disconnect();
   await mongod.stop();
 });

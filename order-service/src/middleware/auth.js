@@ -1,5 +1,5 @@
 const axios = require("axios");
-const USER_SERVICE = process.env.USER_SERVICE_URL || "http://user-service:3001";
+const USER_SERVICE = process.env.USER_SERVICE_URL;
 
 const authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;

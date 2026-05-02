@@ -69,7 +69,15 @@ const orderController = {
 
   getMyOrders: async (req, res, next) => {
     try {
-      const orders = await Order.find({ userId: req.user.userId }).sort({ createdAt: -1 });
+      const userId = req.user.userId;
+
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ error: "Invalid user id" });
+      }
+
+      const orders = await Order.find({
+        userId: new mongoose.Types.ObjectId(userId)
+      }).sort({ createdAt: -1 });
       res.json({ orders, count: orders.length });
     } catch (err) { next(err); }
   },
