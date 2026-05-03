@@ -60,14 +60,6 @@ const authenticate = async (req, res, next) => {
     }
   }
 
-  // Local fallback
-  if (process.env.NODE_ENV !== "development") {
-    log("❌ No USER_SERVICE_URL in non-dev environment");
-    return res
-      .status(401)
-      .json({ error: "Authentication service unavailable" });
-  }
-
   try {
     const token = authHeader.split(" ")[1];
 

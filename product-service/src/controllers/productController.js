@@ -60,10 +60,11 @@ const productController = {
 
   getById: async (req, res, next) => {
     try {
+      console.log("Fetching product by ID:", req.params.id);
       if (!mongoose.isValidObjectId(req.params.id))
-        return res.status(404).json({ error: "Product not found" });
+        return res.status(404).json({ error: "Product not found 11" });
       const product = await Product.findById(req.params.id);
-      if (!product) return res.status(404).json({ error: "Product not found" });
+      if (!product) return res.status(404).json({ error: "Product not found 22" });
       res.json({ product });
     } catch (err) { next(err); }
   },

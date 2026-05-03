@@ -20,10 +20,14 @@ const orderController = {
 
         let product;
         try { product = await serviceClients.getProduct(item.productId); }
-        catch { return res.status(404).json({ error: `Product ${item.productId} not found` }); }
+        catch (err) { 
+          console.error("Product fetch failed:", err.message);
+          return res.status(404).json({ error: `Product ${item.productId} not found` }); 
+        }
 
         try { await serviceClients.checkAndReserveStock(item.productId, item.quantity); }
         catch (err) {
+          console.error("Stock check failed:", err.message);
           const msg = err.response?.data?.error || "Stock check failed";
           return res.status(409).json({ error: msg, productId: item.productId });
         }
