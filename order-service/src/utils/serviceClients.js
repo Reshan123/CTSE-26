@@ -29,7 +29,7 @@ const serviceClients = {
   },
 
   getProduct: async (productId) => {
-    conseole.log("Fetching product from PRODUCT_SERVICE:", productId);
+    console.log("Fetching product from PRODUCT_SERVICE:", productId);
     const resp = await axios.get(`${PRODUCT_SERVICE}/api/products/${productId}`, {
       headers: SERVICE_HEADERS()
     });
