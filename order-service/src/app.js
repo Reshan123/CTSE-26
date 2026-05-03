@@ -31,6 +31,7 @@ app.get("/health", (req, res) =>
     timestamp: new Date().toISOString(),
   }),
 );
+console.log("Order Service is running...");
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/orders", orderRoutes);

@@ -6,7 +6,7 @@ const { Payment, PaymentStatus } = require("../models/paymentModel");
 const ORDER_SERVICE = process.env.ORDER_SERVICE_URL;
 
 const simulateGateway = () => {
-  return crypto.randomInt(100) >= 5; // 95% success
+  return crypto.randomInt(100) >= 5;
 };
 
 const paymentController = {
